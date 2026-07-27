@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NCSB Self-Assessment | SRKK</title>
+<meta name="description" content="Score your organisation against the National Cyber Security Baseline, using NACSA's own questions and scoring.">
+<style>
+:root{
+  --navy:#1226AA; --navy-deep:#0B186E; --navy-mid:#4A5AC7;
+  --pale:#EDF0FC; --tint:#DCE2F8; --hair:#D3D8EC;
+  --gold:#FFC000; --gold-pale:#FFF4D6; --gold-deep:#8A6300;
+  --ink:#131313; --grey:#5C6070; --grey-lt:#8A8F9E; --white:#fff;
+  --stack:"Segoe UI","Tenorite",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --shell:min(760px,100%);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;font-family:var(--stack);color:var(--ink);background:var(--white);
+  font-size:17px;line-height:1.5;
+}
+.wrap{width:var(--shell);margin:0 auto;padding:0 20px}
+h1,h2,h3{margin:0;line-height:1.2;font-weight:700}
+p{margin:0 0 .75em}
+p:last-child{margin-bottom:0}
+a{color:var(--navy)}
+
+/* ---------- masthead ---------- */
+header{background:var(--navy);color:var(--white);padding:34px 0 30px}
+.brand{font-size:13px;letter-spacing:.16em;font-weight:700;color:var(--gold);text-transform:uppercase}
+header h1{font-size:clamp(28px,6vw,40px);margin:14px 0 12px}
+header .sub{color:var(--tint);font-size:17px;max-width:56ch}
+.meta{margin-top:20px;padding-top:16px;border-top:1px solid var(--navy-mid);
+  color:var(--tint);font-size:13.5px}
+
+/* ---------- element picker ---------- */
+.picker{display:flex;gap:10px;flex-wrap:wrap;margin:26px 0 4px}
+.picker button{
+  flex:1 1 220px;text-align:left;cursor:pointer;font-family:inherit;
+  background:var(--white);border:1.5px solid var(--hair);border-radius:12px;
+  padding:14px 16px;color:var(--ink);font-size:16px;transition:border-color .15s,background .15s}
+.picker button:hover{border-color:var(--navy-mid)}
+.picker button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--white)}
+.picker .el{display:block;font-weight:700;font-size:17px}
+.picker .ref{display:block;font-size:13px;color:var(--grey);margin-top:3px}
+.picker button[aria-pressed="true"] .ref{color:var(--tint)}
+
+/* ---------- ladder ---------- */
+.ladder{position:sticky;top:0;z-index:5;background:var(--white);
+  border-bottom:1px solid var(--hair);padding:10px 0 12px;margin-bottom:26px}
+.rungs{display:flex;gap:6px}
+.rung{flex:1;position:relative}
+.rung .bar{height:7px;border-radius:4px;background:var(--pale);transition:background .35s}
+.rung .lbl{display:block;font-size:11.5px;color:var(--grey-lt);margin-top:6px;
+  letter-spacing:.03em}
+.rung[data-state="yes"] .bar{background:var(--navy)}
+.rung[data-state="yes"] .lbl{color:var(--navy);font-weight:700}
+.rung[data-state="stop"] .bar{background:var(--gold)}
+.rung[data-state="stop"] .lbl{color:var(--gold-deep);font-weight:700}
+.rung[data-state="after"] .bar{background:var(--pale);opacity:.55}
+.rung[data-state="after"] .lbl{color:var(--grey-lt);opacity:.7}
+.ladder .read{font-size:13px;color:var(--grey);margin-top:9px}
+.ladder .read b{color:var(--navy)}
+
+/* ---------- questions ---------- */
+.q{border:1.5px solid var(--hair);border-radius:14px;padding:20px;margin-bottom:16px;
+  transition:border-color .2s}
+.q[data-answered="1"]{border-color:var(--tint);background:#FBFCFF}
+.q .tag{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--navy);
+  text-transform:uppercase}
+.q h3{font-size:19px;margin:8px 0 10px}
+.q blockquote{margin:0 0 14px;padding:12px 14px;background:var(--pale);
+  border-radius:10px;font-size:15px;color:var(--ink);font-style:italic}
+.q .ev{font-size:14.5px;color:var(--grey);margin-bottom:14px}
+.q .ev b{color:var(--ink);display:block;margin-bottom:5px;font-style:normal}
+.q .ev ul{margin:0;padding-left:19px}
+.q .ev li{margin-bottom:3px}
+fieldset{border:0;margin:0;padding:0}
+legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.opts{display:flex;gap:8px;flex-wrap:wrap}
+.opt{flex:1 1 100px}
+.opt input{position:absolute;opacity:0;width:1px;height:1px}
+.opt span{display:block;text-align:center;cursor:pointer;padding:11px 8px;
+  border:1.5px solid var(--hair);border-radius:10px;font-size:15px;font-weight:600;
+  transition:all .15s}
+.opt span:hover{border-color:var(--navy-mid)}
+.opt input:focus-visible+span{outline:3px solid var(--gold);outline-offset:2px}
+.opt input:checked+span{background:var(--navy);border-color:var(--navy);color:var(--white)}
+.opt.no input:checked+span{background:var(--gold-deep);border-color:var(--gold-deep)}
+.opt.unsure input:checked+span{background:var(--grey);border-color:var(--grey)}
+
+/* ---------- result ---------- */
+.result{margin:30px 0;border-radius:16px;overflow:hidden;border:1.5px solid var(--navy)}
+.result .head{background:var(--navy);color:var(--white);padding:24px 22px}
+.result .head .eyebrow{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold);font-weight:700}
+.result .head .lvl{font-size:clamp(30px,7vw,42px);font-weight:700;margin:8px 0 0}
+.result .head .crit{color:var(--tint);font-size:15px;margin-top:10px}
+.result .body{padding:22px}
+.result h3{font-size:16px;margin:0 0 8px;color:var(--navy)}
+.result .block{margin-bottom:20px}
+.result .block:last-child{margin-bottom:0}
+.callout{background:var(--gold-pale);border:1.5px solid var(--gold);border-radius:12px;
+  padding:16px;font-size:15px}
+.callout b{color:var(--gold-deep)}
+.fixlist{margin:0;padding-left:19px;font-size:15px;color:var(--grey)}
+.fixlist li{margin-bottom:5px}
+
+/* ---------- engage ---------- */
+.engage{border:1.5px solid var(--hair);border-radius:16px;padding:22px;margin-bottom:34px}
+.engage h2{font-size:22px;margin-bottom:8px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:14px;font-weight:600;margin-bottom:5px}
+.field input{width:100%;font-family:inherit;font-size:16px;padding:11px 12px;
+  border:1.5px solid var(--hair);border-radius:10px;background:var(--white);color:var(--ink)}
+.field input:focus{outline:3px solid var(--gold);outline-offset:1px;border-color:var(--navy)}
+.field .hint{font-size:13px;color:var(--grey-lt);margin-top:4px}
+.consent{display:flex;gap:11px;align-items:flex-start;background:var(--pale);
+  border-radius:10px;padding:14px;font-size:14px;margin-bottom:16px}
+.consent input{margin-top:3px;width:18px;height:18px;flex:0 0 auto}
+.btn{display:inline-block;font-family:inherit;font-size:16px;font-weight:700;
+  padding:13px 22px;border-radius:10px;cursor:pointer;border:1.5px solid var(--navy);
+  background:var(--navy);color:var(--white);transition:background .15s}
+.btn:hover{background:var(--navy-deep)}
+.btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn.ghost{background:var(--white);color:var(--navy)}
+.btn.ghost:hover{background:var(--pale)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap}
+.status{margin-top:12px;font-size:14.5px;font-weight:600}
+.status.ok{color:var(--navy)}
+.status.err{color:var(--gold-deep)}
+
+footer{border-top:1px solid var(--hair);padding:22px 0 40px;font-size:13px;color:var(--grey-lt)}
+footer p{margin-bottom:.5em}
+.hidden{display:none !important}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+@media print{.picker,.engage,.ladder,.btnrow{display:none}.q{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand">SRKK &middot; Compliance self-assessment</div>
+    <h1>Where do you actually sit against the Baseline?</h1>
+    <p class="sub">Four questions, in NACSA's own wording, scored the way NACSA's own
+       workbook scores them. It takes about five minutes and nothing is stored unless
+       you choose to send it.</p>
+    <p class="meta">National Cyber Security Baseline v1.4, 23 September 2025.
+       This tool reproduces the questions and scoring from NACSA's published
+       self-assessment workbook. It is not a substitute for a formal assessment.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="picker" role="group" aria-label="Choose which element to assess">
+    <button type="button" data-el="capacity" aria-pressed="true">
+      <span class="el">Capacity Management</span>
+      <span class="ref">Element 10 &middot; Questions 34 to 37</span>
+    </button>
+    <button type="button" data-el="password" aria-pressed="false">
+      <span class="el">Password Management</span>
+      <span class="ref">Element 27 &middot; Questions 100 to 103</span>
+    </button>
+  </div>
+
+  <div class="ladder">
+    <div class="rungs" id="rungs"></div>
+    <p class="read" id="ladderRead">Answer in order. The workbook tells you to stop at
+       your first No, so <b>the order of the questions is the ladder</b>.</p>
+  </div>
+
+  <div id="questions"></div>
+
+  <div id="result" class="hidden" aria-live="polite"></div>
+
+  <section class="engage hidden" id="engage">
+    <h2>Want a second opinion on this?</h2>
+    <p style="font-size:15px;color:var(--grey)">Send us your answers and we will come
+       back with the specific gaps between what you have recorded and what an assessor
+       expects to be shown. No cost, and no obligation to go further.</p>
+
+    <div class="field">
+      <label for="f-name">Full name</label>
+      <input id="f-name" type="text" autocomplete="name" required>
+    </div>
+    <div class="field">
+      <label for="f-email">Work email</label>
+      <input id="f-email" type="email" autocomplete="email" required>
+    </div>
+    <div class="field">
+      <label for="f-org">Organisation</label>
+      <input id="f-org" type="text" autocomplete="organization" required>
+    </div>
+    <div class="field">
+      <label for="f-role">Role <span style="font-weight:400;color:var(--grey-lt)">(optional)</span></label>
+      <input id="f-role" type="text" autocomplete="organization-title">
+    </div>
+
+    <label class="consent">
+      <input type="checkbox" id="f-consent">
+      <span>I agree that SRKK may use the details above and my answers to contact me
+        about this assessment. I understand I can ask for my details to be deleted at
+        any time.</span>
+    </label>
+
+    <div class="btnrow">
+      <button type="button" class="btn" id="send" disabled>Send my answers</button>
+      <button type="button" class="btn ghost" id="copy">Copy my result instead</button>
+    </div>
+    <p class="status" id="status" role="status"></p>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p><b>Sources.</b> National Cyber Security Baseline v1.4, sections 3.4.2 and 3.11.3.
+     NCSB Self-Assessment workbook v1.4, sheets CS Baseline Questionnaires and
+     CS Baseline Scoring Dashboard. NACSA Code of Practice template, sections 8.2
+     and 15.3.</p>
+  <p id="foot-note"></p>
+  <p>Prepared by SRKK. This tool does not collect anything until you press Send.</p>
+</footer>
+
+<script>
+/* ======================================================================
+   CONFIGURATION
+
+   SUBMIT_ENDPOINT: paste the HTTP POST URL of a Power Automate flow
+   (or any endpoint that accepts JSON). Leave it empty and the Send button
+   falls back to opening a pre-filled email instead, so the page still
+   works with no backend at all.
+
+   SUBMIT_TO: the address used by that email fallback.
+   ====================================================================== */
+const SUBMIT_ENDPOINT = "";
+const SUBMIT_TO       = "REPLACE-ME@srkk.com";
+
+/* ---------------------------------------------------------------- data */
+const ELEMENTS = {
+  capacity: {
+    name: "Capacity Management",
+    element: 10,
+    ncsb: "3.4.2", workbook: "Questions 34 to 37", cop: "8.2",
+    rule: "capacity",
+    ruleText: "0 Yes scores Initial, 1 Yes Basic, 2 or 3 Yes Intermediate, " +
+              "and all 4 Yes Advanced.",
+    note: "Capacity Management scoring: one Yes is already enough to reach Basic, " +
+          "and performance testing is the only route from Intermediate to Advanced.",
+    criteria: {
+      Initial: "No capacity management plan established. Minimal practices. " +
+               "Major improvement required.",
+      Basic: "Plan established. Established practices. Further improvement required.",
+      Intermediate: "Plan established, and resource utilisation tracked and monitored. " +
+                    "Established and standardised. Minor improvement required.",
+      Advanced: "Plan, monitoring, annual review with forecasts, and performance tests " +
+                "prior to go-live or whenever required. Well established across the " +
+                "organisation, actively pursuing continuous improvement."
+    },
+    criteriaSource: "Criteria are NACSA's own, from the workbook sheet CS Baseline Model.",
+    questions: [
+      { letter:"a", ref:"3.4.2.1 / Q34 / CoP 8.2.1", title:"The capacity management plan",
+        verbatim:"The organisation shall establish a capacity management plan.",
+        evidence:[
+          "An approved plan, version controlled, with a named owner",
+          "A record of who approved it and when",
+          "Scope naming the systems, services and resources it covers"],
+        fix:"Write the plan and get it approved. Nothing else in this element counts until this one is a Yes." },
+      { letter:"b", ref:"3.4.2.2 / Q35 / CoP 8.2.2", title:"Tracking and monitoring",
+        verbatim:"Resource utilisation shall be tracked and monitored.",
+        evidence:[
+          "A named monitoring platform, and a documented list of what it covers and what it does not",
+          "Retained utilisation history, ideally the last twelve months",
+          "Threshold definitions, and records of what was done when one was crossed"],
+        fix:"Check retention before coverage. Thirty days of history cannot produce an annual forecast, which is what fails question (c) next." },
+      { letter:"c", ref:"3.4.2.3 / Q36 / CoP 8.2.3", title:"Review and forecasting",
+        verbatim:"Resource utilisation results shall be reviewed annually and the necessary resource forecasts shall be taken.",
+        evidence:[
+          "A dated review document from the last twelve months",
+          "A forecast per critical resource, not a general statement",
+          "Decisions taken, with owners and dates"],
+        fix:"A meeting where utilisation was discussed is not a review. It has to be dated, written down and approved." },
+      { letter:"d", ref:"3.4.2.4 / Q37 / CoP 8.2.4", title:"Performance tests",
+        verbatim:"Performance test shall be conducted prior to system go-live or whenever required to validate and confirm the resilience of the system's performance.",
+        evidence:[
+          "A test plan with pass and fail thresholds declared before the run",
+          "A results report, plus defects and what was done about them",
+          "Retest evidence, and the linked change record"],
+        fix:"This wording changed in v1.4. The trigger is go-live plus whenever required, not an annual calendar date. Evidence both a go-live test and a periodic cycle and you answer either version." }
+    ]
+  },
+
+  password: {
+    name: "Password Management",
+    element: 27,
+    ncsb: "3.11.3", workbook: "Questions 100 to 103", cop: "15.3",
+    rule: "password",
+    ruleText: "0 or 1 Yes scores Initial, 2 Yes Basic, 3 Yes Intermediate, " +
+              "and all 4 Yes Advanced.",
+    note: "Password Management is scored more harshly than Capacity Management. " +
+          "One Yes reaches Basic on capacity but leaves you at Initial here.",
+    criteria: {
+      Initial: "Minimal practices. Major improvement required.",
+      Basic: "Established practices. Further improvement required.",
+      Intermediate: "Established and standardised. Minor improvement required.",
+      Advanced: "Well established across the organisation, actively pursuing " +
+                "continuous improvement."
+    },
+    criteriaSource: "General maturity descriptors from the workbook. Note that the " +
+                    "workbook's model sheet lists three questions for this element " +
+                    "while the questionnaire and the scoring formula use four, so " +
+                    "read the criteria against the questionnaire.",
+    questions: [
+      { letter:"a", ref:"3.11.3.1 / Q100 / CoP 15.3.1", title:"The password management system",
+        verbatim:"The organisation shall establish a password management system.",
+        evidence:[
+          "An approved policy or standard covering how credentials are set, stored, rotated and revoked",
+          "A named owner and an approval record",
+          "The platform controls that actually enforce it, not just the document"],
+        fix:"A written standard on its own is not the system. An assessor will ask what enforces it." },
+      { letter:"b", ref:"3.11.3.2 / Q101 / CoP 15.3.2", title:"Alignment with best practices",
+        verbatim:"The password management system shall be aligned with best practices.",
+        evidence:[
+          "A named reference standard that you align to",
+          "A mapping showing where you follow it and where you deviate",
+          "Deviations accepted by someone with the authority to accept them"],
+        fix:"Name the standard you follow. Alignment you cannot point at is an assertion, not evidence." },
+      { letter:"c", ref:"3.11.3.3 / Q102 / CoP 15.3.3", title:"Compliance monitoring",
+        verbatim:"Compliance with the password policy shall be regularly monitored.",
+        evidence:[
+          "Reports showing the policy is enforced in the platform, not just published",
+          "Exception records for accounts that do not comply",
+          "Evidence of what was done about those exceptions"],
+        fix:"In v1.4 this question moved from the password management system to the password policy. Monitor against the policy as written." },
+      { letter:"d", ref:"3.11.3.4 / Q103 / CoP 15.3.4", title:"Review",
+        verbatim:"The password management system shall be reviewed annually and / or when changes are required.",
+        evidence:[
+          "A dated review from the last twelve months",
+          "A named reviewer and approver",
+          "Resulting changes tracked through to completion"],
+        fix:"Attach the review to a date you already keep, such as the annual policy cycle, so it cannot quietly lapse." }
+    ]
+  }
+};
+
+/* ------------------------------------------------------------- scoring */
+function consecutiveYes(answers){
+  let n = 0;
+  for (const a of answers){ if (a === "yes") n++; else break; }
+  return n;
+}
+function levelFor(rule, n){
+  if (rule === "password") return n <= 1 ? "Initial" : n === 2 ? "Basic"
+                                : n === 3 ? "Intermediate" : "Advanced";
+  return n === 0 ? "Initial" : n === 1 ? "Basic"
+       : (n === 2 || n === 3) ? "Intermediate" : "Advanced";
+}
+
+/* ---------------------------------------------------------------- state */
+let key = "capacity";
+let answers = [null, null, null, null];
+
+const $ = id => document.getElementById(id);
+
+/* ---------------------------------------------------------------- render */
+function renderQuestions(){
+  const el = ELEMENTS[key];
+  $("questions").innerHTML = el.questions.map((q,i) => `
+    <div class="q" data-answered="0" id="q${i}">
+      <span class="tag">Question ${q.letter} &middot; ${q.ref}</span>
+      <h3>${q.title}</h3>
+      <blockquote>&ldquo;${q.verbatim}&rdquo;</blockquote>
+      <div class="ev">
+        <b>A Yes has to be backed by</b>
+        <ul>${q.evidence.map(e=>`<li>${e}</li>`).join("")}</ul>
+      </div>
+      <fieldset>
+        <legend>Question ${q.letter}: ${q.title}</legend>
+        <div class="opts">
+          <label class="opt yes"><input type="radio" name="a${i}" value="yes"><span>Yes</span></label>
+          <label class="opt unsure"><input type="radio" name="a${i}" value="unsure"><span>Not sure</span></label>
+          <label class="opt no"><input type="radio" name="a${i}" value="no"><span>No</span></label>
+        </div>
+      </fieldset>
+    </div>`).join("");
+
+  el.questions.forEach((q,i) => {
+    document.querySelectorAll(`input[name="a${i}"]`).forEach(inp => {
+      inp.addEventListener("change", () => {
+        answers[i] = inp.value;
+        $("q"+i).dataset.answered = "1";
+        update();
+      });
+    });
+  });
+  $("foot-note").textContent = el.criteriaSource;
+}
+
+function renderLadder(){
+  const el = ELEMENTS[key];
+  const n = consecutiveYes(answers);
+  const answered = answers.filter(Boolean).length;
+  $("rungs").innerHTML = el.questions.map((q,i) => {
+    let state = "todo";
+    if (i < n) state = "yes";
+    else if (i === n && answers[i]) state = "stop";
+    else if (i > n && answers[i]) state = "after";
+    return `<div class="rung" data-state="${state}">
+              <div class="bar"></div><span class="lbl">(${q.letter})</span>
+            </div>`;
+  }).join("");
+
+  const read = $("ladderRead");
+  if (!answered){
+    read.innerHTML = "Answer in order. The workbook tells you to stop at your first " +
+                     "No, so <b>the order of the questions is the ladder</b>.";
+  } else if (n === 4){
+    read.innerHTML = "<b>Four consecutive Yes.</b> The ladder runs all the way up.";
+  } else if (answers[n]){
+    read.innerHTML = `The ladder stops at <b>question (${el.questions[n].letter})</b>. ` +
+                     `Anything above it does not count towards the score.`;
+  } else {
+    read.innerHTML = `<b>${n}</b> consecutive Yes so far. Keep going.`;
+  }
+}
+
+function update(){
+  renderLadder();
+  if (answers.every(Boolean)) renderResult(); else {
+    $("result").classList.add("hidden");
+    $("engage").classList.add("hidden");
+  }
+}
+
+function renderResult(){
+  const el = ELEMENTS[key];
+  const n = consecutiveYes(answers);
+  const level = levelFor(el.rule, n);
+  const stopped = n < 4;
+  const stopQ = stopped ? el.questions[n] : null;
+
+  // Yes answers that sit above the stop and therefore earn nothing
+  const wasted = [];
+  for (let i = n + 1; i < 4; i++) if (answers[i] === "yes") wasted.push(el.questions[i].letter);
+  const unsure = answers.map((a,i)=>a==="unsure"?el.questions[i].letter:null).filter(Boolean);
+
+  let html = `
+    <div class="result">
+      <div class="head">
+        <div class="eyebrow">${el.name} &middot; Element ${el.element}</div>
+        <div class="lvl">${level}</div>
+        <p class="crit">${el.criteria[level]}</p>
+      </div>
+      <div class="body">
+        <div class="block">
+          <h3>How this was worked out</h3>
+          <p style="font-size:15px;color:var(--grey)">You recorded
+            <b style="color:var(--ink)">${n} consecutive Yes</b> starting at question (a).
+            ${el.ruleText}</p>
+        </div>`;
+
+  if (wasted.length){
+    html += `<div class="block"><div class="callout">
+      <b>You are being scored lower than your engineering deserves.</b><br>
+      You answered Yes to question${wasted.length>1?"s":""}
+      (${wasted.join("), (")}), but the ladder had already stopped at
+      (${stopQ.letter}), so those answers earn nothing. Closing
+      (${stopQ.letter}) alone would move you to
+      <b>${levelFor(el.rule, (function(){let m=0;for(let i=0;i<4;i++){if(i===n||answers[i]==="yes")m++;else break;}return m;})())}</b>.
+    </div></div>`;
+  }
+
+  if (unsure.length){
+    html += `<div class="block"><div class="callout">
+      <b>You marked question${unsure.length>1?"s":""} (${unsure.join("), (")}) as not sure.</b><br>
+      An assessor treats a Yes you cannot evidence as a No. A useful rule of thumb:
+      if the evidence cannot be produced within one working day of the request,
+      it is a No until it can.
+    </div></div>`;
+  }
+
+  if (stopped){
+    html += `<div class="block">
+      <h3>Fix this first: question (${stopQ.letter}), ${stopQ.title}</h3>
+      <p style="font-size:15px;color:var(--grey)">${stopQ.fix}</p>
+      <p style="font-size:14px;font-weight:600;margin:12px 0 6px">What a Yes needs</p>
+      <ul class="fixlist">${stopQ.evidence.map(e=>`<li>${e}</li>`).join("")}</ul>
+    </div>`;
+  } else {
+    html += `<div class="block">
+      <h3>Keep it that way</h3>
+      <p style="font-size:15px;color:var(--grey)">Advanced is a statement about
+      evidence, not about intent. The usual way organisations slip back is retention
+      running out, or a review cycle quietly lapsing after a reorganisation.</p>
+    </div>`;
+  }
+
+  html += `<div class="block"><div style="font-size:13.5px;color:var(--grey-lt)">
+      ${el.note}<br>${el.criteriaSource}
+    </div></div></div></div>`;
+
+  $("result").innerHTML = html;
+  $("result").classList.remove("hidden");
+  $("engage").classList.remove("hidden");
+}
+
+/* ------------------------------------------------------------- payload */
+function summary(){
+  const el = ELEMENTS[key];
+  const n = consecutiveYes(answers);
+  const lines = [
+    `NCSB self-assessment: ${el.name} (Element ${el.element}, ${el.workbook})`,
+    `Baseline version 1.4. Completed ${new Date().toISOString().slice(0,10)}.`,
+    ``,
+    ...el.questions.map((q,i)=>`(${q.letter}) ${q.title}: ${answers[i].toUpperCase()}`),
+    ``,
+    `Consecutive Yes from (a): ${n}`,
+    `Maturity level: ${levelFor(el.rule, n)}`
+  ];
+  return lines.join("\n");
+}
+function payload(){
+  const el = ELEMENTS[key];
+  const n = consecutiveYes(answers);
+  return {
+    element: el.element, elementName: el.name, baselineVersion: "1.4",
+    workbookQuestions: el.workbook,
+    answers: Object.fromEntries(el.questions.map((q,i)=>[q.letter, answers[i]])),
+    consecutiveYes: n, maturityLevel: levelFor(el.rule, n),
+    completedAt: new Date().toISOString(),
+    contact: {
+      name: $("f-name").value.trim(), email: $("f-email").value.trim(),
+      organisation: $("f-org").value.trim(), role: $("f-role").value.trim()
+    },
+    consent: $("f-consent").checked
+  };
+}
+
+/* ----------------------------------------------------------------- wire */
+document.querySelectorAll(".picker button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".picker button")
+      .forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    key = b.dataset.el;
+    answers = [null, null, null, null];
+    renderQuestions();
+    update();
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+});
+
+function gate(){
+  const ok = $("f-name").value.trim() && $("f-email").value.trim() &&
+             $("f-org").value.trim() && $("f-consent").checked;
+  $("send").disabled = !ok;
+}
+["f-name","f-email","f-org","f-consent"].forEach(id =>
+  $(id).addEventListener("input", gate));
+$("f-consent").addEventListener("change", gate);
+
+$("copy").addEventListener("click", async () => {
+  const s = $("status");
+  try {
+    await navigator.clipboard.writeText(summary());
+    s.className = "status ok"; s.textContent = "Copied. Paste it wherever you keep your compliance notes.";
+  } catch {
+    s.className = "status err";
+    s.textContent = "Copying is blocked in this browser. Use your browser's print option to save the page instead.";
+  }
+});
+
+$("send").addEventListener("click", async () => {
+  const s = $("status");
+  const btn = $("send");
+  const data = payload();
+
+  if (!SUBMIT_ENDPOINT){
+    const body = encodeURIComponent(
+      summary() + "\n\n" +
+      `Name: ${data.contact.name}\nOrganisation: ${data.contact.organisation}\n` +
+      `Role: ${data.contact.role || "not given"}\nEmail: ${data.contact.email}\n`);
+    window.location.href =
+      `mailto:${SUBMIT_TO}?subject=${encodeURIComponent("NCSB self-assessment: " + data.elementName)}&body=${body}`;
+    s.className = "status ok";
+    s.textContent = "Your email app should open with the result filled in. Press send there.";
+    return;
+  }
+
+  btn.disabled = true; s.className = "status"; s.textContent = "Sending.";
+  try {
+    const res = await fetch(SUBMIT_ENDPOINT, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error(res.status);
+    s.className = "status ok";
+    s.textContent = "Sent. We will come back to you at " + data.contact.email + ".";
+  } catch {
+    btn.disabled = false;
+    s.className = "status err";
+    s.textContent = "That did not send. Use Copy my result instead and email it to us, and we will pick it up from there.";
+  }
+});
+
+renderQuestions();
+update();
+</script>
+</body>
+</html>
