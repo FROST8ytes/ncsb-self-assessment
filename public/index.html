@@ -146,8 +146,8 @@ footer p{margin-bottom:.5em}
     <div class="brand">SRKK &middot; Compliance self-assessment</div>
     <h1>Where do you actually sit against the Baseline?</h1>
     <p class="sub">Four questions, in NACSA's own wording, scored the way NACSA's own
-       workbook scores them. It takes about five minutes and nothing is stored unless
-       you choose to send it.</p>
+       workbook scores them. It takes about five minutes, runs entirely in your
+       browser, and collects nothing.</p>
     <p class="meta">National Cyber Security Baseline v1.4, 23 September 2025.
        This tool reproduces the questions and scoring from NACSA's published
        self-assessment workbook. It is not a substitute for a formal assessment.</p>
@@ -178,41 +178,18 @@ footer p{margin-bottom:.5em}
   <div id="result" class="hidden" aria-live="polite"></div>
 
   <section class="engage hidden" id="engage">
-    <h2>Want a second opinion on this?</h2>
-    <p style="font-size:15px;color:var(--grey)">Send us your answers and we will come
-       back with the specific gaps between what you have recorded and what an assessor
-       expects to be shown. No cost, and no obligation to go further.</p>
-
-    <div class="field">
-      <label for="f-name">Full name</label>
-      <input id="f-name" type="text" autocomplete="name" required>
-    </div>
-    <div class="field">
-      <label for="f-email">Work email</label>
-      <input id="f-email" type="email" autocomplete="email" required>
-    </div>
-    <div class="field">
-      <label for="f-org">Organisation</label>
-      <input id="f-org" type="text" autocomplete="organization" required>
-    </div>
-    <div class="field">
-      <label for="f-role">Role <span style="font-weight:400;color:var(--grey-lt)">(optional)</span></label>
-      <input id="f-role" type="text" autocomplete="organization-title">
-    </div>
-
-    <label class="consent">
-      <input type="checkbox" id="f-consent">
-      <span>I agree that SRKK may use the details above and my answers to contact me
-        about this assessment. I understand I can ask for my details to be deleted at
-        any time.</span>
-    </label>
-
+    <h2>Keep your result</h2>
+    <p style="font-size:15px;color:var(--grey)">Nothing here is stored or sent. Copy your
+       result if you want to keep it, or note the maturity level above.</p>
     <div class="btnrow">
-      <button type="button" class="btn" id="send" disabled>Send my answers</button>
-      <button type="button" class="btn ghost" id="copy">Copy my result instead</button>
+      <button type="button" class="btn" id="copy">Copy my result</button>
     </div>
     <p class="status" id="status" role="status"></p>
+    <p style="font-size:14px;color:var(--grey);margin-top:16px">
+       Want the slides, or a second opinion on these answers? Use the SRKK form from the
+       session. You can enter your maturity level there.</p>
   </section>
+
 
 </main>
 
@@ -222,22 +199,10 @@ footer p{margin-bottom:.5em}
      CS Baseline Scoring Dashboard. NACSA Code of Practice template, sections 8.2
      and 15.3.</p>
   <p id="foot-note"></p>
-  <p>Prepared by SRKK. This tool does not collect anything until you press Send.</p>
+  <p>Prepared by SRKK. This tool runs entirely in your browser. It collects nothing and sends nothing.</p>
 </footer>
 
 <script>
-/* ======================================================================
-   CONFIGURATION
-
-   SUBMIT_ENDPOINT: paste the HTTP POST URL of a Power Automate flow
-   (or any endpoint that accepts JSON). Leave it empty and the Send button
-   falls back to opening a pre-filled email instead, so the page still
-   works with no backend at all.
-
-   SUBMIT_TO: the address used by that email fallback.
-   ====================================================================== */
-const SUBMIT_ENDPOINT = "";
-const SUBMIT_TO       = "REPLACE-ME@srkk.com";
 
 /* ---------------------------------------------------------------- data */
 const ELEMENTS = {
@@ -522,22 +487,6 @@ function summary(){
   ];
   return lines.join("\n");
 }
-function payload(){
-  const el = ELEMENTS[key];
-  const n = consecutiveYes(answers);
-  return {
-    element: el.element, elementName: el.name, baselineVersion: "1.4",
-    workbookQuestions: el.workbook,
-    answers: Object.fromEntries(el.questions.map((q,i)=>[q.letter, answers[i]])),
-    consecutiveYes: n, maturityLevel: levelFor(el.rule, n),
-    completedAt: new Date().toISOString(),
-    contact: {
-      name: $("f-name").value.trim(), email: $("f-email").value.trim(),
-      organisation: $("f-org").value.trim(), role: $("f-role").value.trim()
-    },
-    consent: $("f-consent").checked
-  };
-}
 
 /* ----------------------------------------------------------------- wire */
 document.querySelectorAll(".picker button").forEach(b => {
@@ -552,14 +501,6 @@ document.querySelectorAll(".picker button").forEach(b => {
   });
 });
 
-function gate(){
-  const ok = $("f-name").value.trim() && $("f-email").value.trim() &&
-             $("f-org").value.trim() && $("f-consent").checked;
-  $("send").disabled = !ok;
-}
-["f-name","f-email","f-org","f-consent"].forEach(id =>
-  $(id).addEventListener("input", gate));
-$("f-consent").addEventListener("change", gate);
 
 $("copy").addEventListener("click", async () => {
   const s = $("status");
@@ -572,38 +513,6 @@ $("copy").addEventListener("click", async () => {
   }
 });
 
-$("send").addEventListener("click", async () => {
-  const s = $("status");
-  const btn = $("send");
-  const data = payload();
-
-  if (!SUBMIT_ENDPOINT){
-    const body = encodeURIComponent(
-      summary() + "\n\n" +
-      `Name: ${data.contact.name}\nOrganisation: ${data.contact.organisation}\n` +
-      `Role: ${data.contact.role || "not given"}\nEmail: ${data.contact.email}\n`);
-    window.location.href =
-      `mailto:${SUBMIT_TO}?subject=${encodeURIComponent("NCSB self-assessment: " + data.elementName)}&body=${body}`;
-    s.className = "status ok";
-    s.textContent = "Your email app should open with the result filled in. Press send there.";
-    return;
-  }
-
-  btn.disabled = true; s.className = "status"; s.textContent = "Sending.";
-  try {
-    const res = await fetch(SUBMIT_ENDPOINT, {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) throw new Error(res.status);
-    s.className = "status ok";
-    s.textContent = "Sent. We will come back to you at " + data.contact.email + ".";
-  } catch {
-    btn.disabled = false;
-    s.className = "status err";
-    s.textContent = "That did not send. Use Copy my result instead and email it to us, and we will pick it up from there.";
-  }
-});
 
 renderQuestions();
 update();
